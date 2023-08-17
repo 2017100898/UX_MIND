@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            {% for i in range(1, 60) %}
+            <div class="col-12">
+                <canvas id="canvas{{ i }}" style="height:1.5vh;"></canvas>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <!--suppress JSUnresolvedLibraryURL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+    <script>
+    $(document).ready(function () {
+        const createConfig = () => {
+            return {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        borderColor: '#ABE7E1',
+                        borderWidth: 2,
+                        data: [],
+                        fill: false,
+                        pointRadius: 0,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    hover: {
+                        mode: 'nearest',
+                        intersect: false
+                    },
+                    scales: {
+                        xAxes: [{
+                            display: false,
+                            scaleLabel: {
+                                display: false,
+                                labelString: 'Time'
+                            }
+                        }],
+                        yAxes: [{
+                            display: false,
+                            scaleLabel: {
+                                display: false,
+                                labelString: 'Value'
+                            }
+                        }]
+                    },
+                    title: {
+                        display: false
+                    },
+                    legend: {
+                        display: false
+                    }
+                }
+            };
+        };
+        // Create an array to hold line chart instances
+        const lineCharts = [];
+
+        // Repeat this loop for each line plot
+        for (let i = 1; i <= 59; i++) {
+            const canvasId = `canvas${i}`;
+            const canvas = document.getElementById(canvasId).getContext('2d');
+            const lineChart = new Chart(canvas, createConfig());
+            lineCharts.push(lineChart);
+        }
+
+        const source = new EventSource("/eeg_feed_model");
+
+        source.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+
+            lineCharts.forEach((chart, index) => {
+                if (chart.data.labels.length === 80) {
+                    chart.data.labels.shift();
+                    chart.data.datasets[0].data.shift();
+                }
+
+                chart.data.labels.push(data.time);
+                chart.data.datasets[0].data.push(data.value[index]);
+                chart.update();
+            });
+        };
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+        }
+    .container, .row {
+        max-width: 100%;
+        height: auto;
+        background-color: transparent;
+    }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <canvas id="emotionChart" width="500" height="300"></canvas>
+    </div>
+
+    <script>
+        // Set up the initial chart
+        const ctx = document.getElementById('emotionChart').getContext('2d');
+        const initialData = {
+            labels: ['sad', 'disgust', 'angry', 'surprise', 'fear', 'neutral', 'happy'],
+            datasets: [{
+                label: 'Emotion Probability',
+                backgroundColor: '#ABE7E1',
+                data: [0, 0, 0, 0, 0, 0, 0],  // Initial empty data
+            }]
+        };
+        const emotionChart = new Chart(ctx, {
+            type: 'bar',
+            data: initialData,
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        color: 'white',
+                    },
+                    x: {
+                        display: true,  // Show x-axis labels
+                        
+                        title: {
+                            display: true,
+                            text: 'Emotion',
+                            color: 'white'
+                        },
+                        ticks: {
+                            autoSkip: false,  // Prevent automatic skipping of labels
+                            color: 'white'
+                        }
+                    }
+                }
+            }
+        });
+        emotionChart.options.scales.x.grid = {
+            display: false
+        };
+        emotionChart.options.scales.y.grid = {
+            display: false
+        };
+        // Establish an EventSource connection to the server for real-time data
+        const source = new EventSource('/emotion_feed_model');
+        source.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            emotionChart.data.datasets[0].data = data.probabilities;
+            emotionChart.update();
+        };
+    </script>
+</body>
+</html>
