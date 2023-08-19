@@ -11,13 +11,18 @@ from deepface import DeepFace
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import json
 import mne
-from mne import create_info
 import matplotlib.pyplot as plt
 import scipy
 from flask_cors import CORS
 import torch
 from flask import Flask, Response, render_template, stream_with_context
 import time
+from mne import create_info
+from scipy import signal
+import pickle
+from joblib import load
+import warnings
+warnings.filterwarnings(action='ignore')
 
 # Flask 애플리케이션 생성
 app = Flask(__name__)
@@ -25,6 +30,19 @@ CORS(app)
 
 # 웹캠 비디오 캡처 객체 생성
 cap = cv2.VideoCapture(0)
+
+def load_eeg_data():
+    file_names = './datas/eeg_record3.mat'
+    mat = scipy.io.loadmat(file_names)
+    data = mat['o']['data'][0,0]
+    sfreq = mat['o']['sampFreq'][0][0][0][0]
+    channel_names = ['AF3', 'F7', 'F3', 'FC5', 'T7', 'P7', 'O1', 'O2', 'P8', 'T8', 'FC6', 'F4', 'F8', 'AF4']
+    info = create_info(channel_names, sfreq, ch_types=['eeg']*len(channel_names))
+    info.set_montage('standard_1020')
+    info['description'] = 'AIMS'
+
+    concatenated_data = data[5000:15000, 3:17].T
+    return info, concatenated_data
 
 ########################################🌟 MNE TOPOLOGY###################################
 
@@ -57,6 +75,7 @@ def generate_mne(info, concatenated_data):
         mne.viz.plot_topomap(
             concatenated_data[:, time_step],
             info,
+            vlim=(4000, 5000),
             axes=ax,
             show=False,
             outlines='head',
@@ -80,25 +99,7 @@ def generate_mne(info, concatenated_data):
 # Route to display MNE topomaps
 @app.route('/mne_feed_model')
 def mne_feed_model():
-    peoplelist = ['02wxw']
-    sfreq = 1000
-    band_pass_low = 0.5
-    band_pass_high = 50
-    sample_count = 100
-
-    # Precompute the processed EEG data
-    processed_EEG_data = preprocess_EEG_data(peoplelist, sfreq, band_pass_low, band_pass_high, sample_count)
-
-    # Extract channel names and create info
-    epochs = mne.io.read_epochs_eeglab("./datas/" + peoplelist[0] + '_epoched.set').apply_baseline(baseline=(-1, 0))
-    channel_names = epochs.info.ch_names
-    info = create_info(channel_names, sfreq, ch_types=['eeg'] * len(channel_names))
-    info.set_montage('standard_1020')
-    info['description'] = 'AIMS'
-
-    # Concatenate processed EEG data
-    concatenated_data = np.concatenate(processed_EEG_data[peoplelist[0]], axis=1)
-
+    info, concatenated_data = load_eeg_data()
     response = Response(generate_mne(info, concatenated_data), mimetype='multipart/x-mixed-replace; boundary=frame')
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
@@ -138,23 +139,7 @@ def generate_random_data(concatenated_data):
 
 @app.route('/eeg_feed_model')
 def eeg_feed_model():
-    peoplelist = ['02wxw']
-    sfreq = 128
-    sample_count = 80
-
-    for people in peoplelist:
-        st = r"./datas/ " + people + '_epoched.set'
-        st = st.replace(" ", "")
-        epochs = mne.io.read_epochs_eeglab(st).apply_baseline(baseline=(-1, 0))
-        epochs = mne.io.read_epochs_eeglab(st).set_eeg_reference('average').apply_baseline(baseline=(-0.5, 0))
-
-        globals()['subject_{}_EEG_data'.format(people)] = epochs.crop(0, 3.999).get_data()
-        # downsampling
-        globals()['subject_{}_EEG_data'.format(people)] = scipy.signal.resample(
-            globals()['subject_{}_EEG_data'.format(people)], sfreq * 4, axis=2)
-
-    EEG = globals()['subject_{}_EEG_data'.format(people)][:sample_count]
-    concatenated_data = np.concatenate(EEG, axis=1)
+    _, concatenated_data = load_eeg_data()
     response = Response(stream_with_context(generate_random_data(concatenated_data)), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
@@ -164,6 +149,150 @@ def eeg_feed_model():
 @app.route('/eeg_feed')
 def eeg_feed():
     return render_template('eeg_feed.html')
+
+
+
+
+
+########################################🌟 ATTENTION PLOT###################################
+
+# Define constants
+CHANNEL_NAMES = ['AF3', 'F7', 'F3', 'FC5', 'T7', 'P7', 'O1', 'O2', 'P8', 'T8', 'FC6', 'F4', 'F8', 'AF4']
+SFREQ = 128
+BAND_PASS_LOW = 0.16
+SELECT_CH = ['F7', 'F3', 'AF4', 'P7', 'P8', 'O1', 'O2']
+TIME_WINDOW = 5
+
+select_ch = ['F7', 'F3', 'AF4', 'P7', 'P8', 'O1', 'O2']
+use_channel_inds = []
+
+# Apply a Butterworth high-pass filter
+def butter_highpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = signal.butter(order, normal_cutoff, btype='high', analog=False)
+    return b, a
+
+# Apply a high-pass filter to EEG data
+def butter_highpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_highpass(cutoff, fs, order=order)
+    x = signal.filtfilt(b, a, data)
+    y = signal.filtfilt(b, a, x)
+    return y
+
+# Extract features from EEG data
+def extract_features(concatenated_eeg, time_window, time_points, window_blackman):
+
+    col = len(select_ch) #7
+    power_eeg = {}
+    bin_eeg = {}
+    bin_eeg_avg = {}
+    knn_focus ={}
+
+    power_eeg['data']=np.zeros([7, 513, time_window+1])
+    bin_eeg['data']=np.zeros([7, 36, time_window+1])
+    bin_eeg_avg['data']=np.zeros([7, 36, 1])
+    knn_focus['data']=np.zeros([252,1])
+
+    if concatenated_eeg.shape[0] < time_points:
+        original_array = np.random.rand(concatenated_eeg.shape[0],7)
+        additional_values = np.random.rand(time_points - concatenated_eeg.shape[0], 7)
+        concatenated_eeg = np.concatenate((original_array, additional_values))
+
+    else:
+        pass
+    
+    for i in range(col):
+
+        # print(concatenated_eeg[:,i].shape) # 1920
+        concatenated_eeg[:,i] = butter_highpass_filter(concatenated_eeg[:,i], 0.16, 128, 5)
+        f, t, y1=scipy.signal.stft(concatenated_eeg[:,i],fs=128, window=window_blackman, nperseg=128, 
+                      noverlap=0, nfft=1024, detrend=False,return_onesided=True, boundary='zeros',
+                      padded=True)
+        # print(t)
+        # print(np.abs(y1).shape) # (512, 16)
+        power_eeg['data'][i,:, :]=(np.abs(y1))**2
+        # print('power_eeg is ', power_eeg) # 7, 513 16
+        
+    for chn in range(col):
+        j=0
+        for i in range(1,144,4):
+            bin_eeg['data'][chn,j,:]=np.average(power_eeg['data'][chn,i:i+4,:],axis=0)
+            # print(power_eeg['data'][chn,i:i+4,:])
+            j+=1
+
+    for chn in range(col):
+        j=0
+        for k in range(0,1):
+            bin_eeg_avg['data'][chn,:,j]=np.average(bin_eeg['data'][chn,:,k:k+(601-time_window+1)],axis=1)
+            j += 1
+
+    for j in range(1):      
+        knn_focus['data'][:,j]=bin_eeg_avg['data'][:,:,j].reshape(1,-1)
+
+    knn_focus['data'] = 10*np.log(knn_focus['data'])
+    if time_window == 15:
+        loaded_scaler = load('./models/scaler_knn.joblib')
+        with open('./models/saved_model', 'rb') as f:
+            mod = pickle.load(f)
+
+
+    elif time_window == 5:
+        loaded_scaler = load('./models/scaler_knn_5second.joblib')
+        with open('./models/saved_model_5second', 'rb') as f:
+            mod = pickle.load(f)
+
+    elif time_window == 10:
+        loaded_scaler = load('./models/scaler_knn_10second.joblib')
+        with open('./models/saved_model_10second', 'rb') as f:
+            mod = pickle.load(f)
+
+    elif time_window == 1:
+        loaded_scaler = load('./models/scaler_knn_1second.joblib')
+        with open('./models/saved_model_1second', 'rb') as f:
+            mod = pickle.load(f)
+
+    return knn_focus['data'].T,loaded_scaler, mod
+
+def get_attention(concatenated_data):
+    time_step = 0
+    time_points = TIME_WINDOW * SFREQ
+    t_win = np.arange(0, 128)
+    M = 12
+    window_blackman = 0.42 - 0.5 * np.cos((2 * np.pi * t_win) / (M - 1)) + 0.08 * np.cos((4 * np.pi * t_win) / (M - 1))
+
+    while True:
+        if time_step > concatenated_data.shape[1]:
+            time_step = 0
+
+        samples = concatenated_data[:, time_step:time_step + time_points]
+        time_step += time_points
+
+        samples = np.array([row[3:17] for row in samples]).T
+        realtime_data = samples[use_channel_inds, :]
+
+        realtime_data, loaded_scaler, mod = extract_features(realtime_data.T, TIME_WINDOW, time_points, window_blackman)
+        realtime_data_scaled = loaded_scaler.transform(realtime_data)
+        
+        value = mod.predict(realtime_data_scaled)[0]
+        #result = "focus" if value == 0 else ("unfocus" if value == 1 else ("drowsy" if value == 2 else "unknown"))
+
+        yield f"data: {value}\n\n"
+        
+        time.sleep(0.1)  # Pause for 0.5 seconds before the next update
+
+@app.route('/attention_feed_model')
+def attention_feed_model():
+    _, concatenated_data = load_eeg_data()
+    response = Response(stream_with_context(get_attention(concatenated_data)), mimetype="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Accel-Buffering"] = "no"
+
+    return response
+
+@app.route('/attention_feed')
+def attention_feed():
+    return render_template('attention_feed.html')
 
 
 ########################################🌟 DIFFUSION MODEL###################################

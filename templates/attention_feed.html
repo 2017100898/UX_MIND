@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Attention Feed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: white; /* Set text color to white */
+            background-color: transparent; /* Set background color to transparent */
+        }
+        .container {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .attention-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="attention-value" id="attention-value">Loading...</div>
+        <canvas id="attention-chart" width="400" height="400"></canvas>
+    </div>
+
+    <script>
+        const attentionValueElement = document.getElementById("attention-value");
+        const attentionChartElement = document.getElementById("attention-chart");
+        const attentionChartCtx = attentionChartElement.getContext("2d");
+
+        const eventSource = new EventSource("/attention_feed_model");
+        const attentionChart = new Chart(attentionChartCtx, {
+            type: "polarArea",
+            data: {
+                labels: ["Focus", "Unfocus", "Drowsy", "Unknown"],
+                datasets: [{
+                    label: "Attention Status",
+                    data: [0, 0, 0, 0], // Initial data values
+                    borderWidth: 0,
+                    backgroundColor: ["rgba(171, 231, 225, 1)", "rgba(234, 197, 104, 1)", "rgba(238, 203, 237, 1)", "rgba(91, 174, 231, 1)"] // Set custom colors with transparency
+                }],
+            }
+        });
+
+        eventSource.onmessage = function(event) {
+            const attentionValue = event.data;
+            let attentionState;
+
+            if (attentionValue === "0") {
+                attentionState = "Focus";
+                attentionChart.data.datasets[0].data = [1, 0, 0, 0];
+            } else if (attentionValue === "1") {
+                attentionState = "Unfocus";
+                attentionChart.data.datasets[0].data = [0, 1, 0, 0];
+            } else if (attentionValue === "2") {
+                attentionState = "Drowsy";
+                attentionChart.data.datasets[0].data = [0, 0, 1, 0];
+            } else {
+                attentionState = "Unknown";
+                attentionChart.data.datasets[0].data = [0, 0, 0, 1];
+            }
+
+            attentionChart.update(); // Update the chart
+            attentionValueElement.textContent = `Attention: ${attentionState}`;
+        };
+
+        eventSource.onerror = function(event) {
+            console.error("EventSource failed:", event);
+            eventSource.close();
+        };
+    </script>
+</body>
+</html>

@@ -99,5 +99,7 @@ with cols[2].container():
         st.markdown('''
                 <div class="card">
                     <div class="card-content" >Attention</div>
+                    <iframe src="http://192.168.1.172:5000/attention_feed" width="100%" height="500" frameborder="0" scrolling="no">
+                        </iframe>
                 </div>''', unsafe_allow_html=True)
         
