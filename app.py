@@ -80,6 +80,7 @@ def generate_mne(info, concatenated_data):
             show=False,
             outlines='head',
             cmap='jet',
+            sensors=False,
             contours=0
         )
 
@@ -135,7 +136,7 @@ def generate_random_data(concatenated_data):
             {'time': time_step, 'value': sample})
 
         yield f"data:{json_data}\n\n"
-        time.sleep(0.04)
+        time.sleep(0.01)
 
 @app.route('/eeg_feed_model')
 def eeg_feed_model():

@@ -27,7 +27,7 @@ card_css = """
 .card {
     border-radius: 15px;
     padding: 20px;
-    background-color: #191925;
+    background-color: #1C1C2A;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px; /* 카드 사이 간격 추가 */
     display: flex;
