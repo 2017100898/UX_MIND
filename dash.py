@@ -19,7 +19,7 @@ with st.sidebar:
         requests.post("http://localhost:5000/diffusion_post_cmd", json={"text_input": text_input})
 
 
-cols = st.columns([1, 1, 1])
+cols = st.columns([1, 1])
 
 
 card_css = """
@@ -52,14 +52,24 @@ card_css = """
 st.markdown(card_css, unsafe_allow_html=True)
 
 with cols[0].container():
-    
-    st.markdown('''
-            <div class="card">
-                <div class="card-content">Pose Estimation</div>
-                <iframe src="http://localhost:5000/pose_feed" width="100%" height="500" frameborder="0" scrolling="no">
-                </iframe>
-            </div>''', unsafe_allow_html=True)
+    sub_cols_1 = st.columns([1, 1])
 
+    with sub_cols_1[0].container():
+        st.markdown('''
+                <div class="card">
+                    <div class="card-content">Pose Estimation</div>
+                    <iframe src="http://localhost:5000/pose_feed" width="100%" height="500" frameborder="0" scrolling="no">
+                    </iframe>
+                </div>''', unsafe_allow_html=True)
+        
+    with sub_cols_1[1].container():  
+        st.markdown('''
+                <div class="card">
+                    <div class="card-content">Emotion</div>
+                        <iframe src="http://localhost:5000/emotion_feed" width="100%" height="500" frameborder="0" scrolling="no">
+                        </iframe>
+                </div>''', unsafe_allow_html=True)
+    
     st.markdown('''
             <div class="card">
                 <div class="card-content">Diffusion Model</div>
@@ -70,32 +80,23 @@ with cols[0].container():
 with cols[1].container():
     st.markdown('''
             <div class="card">
-                <div class="card-content">EEG</div>
-                    <iframe src="http://localhost:5000/eeg_feed" width="100%" height="1110" frameborder="0" scrolling="no">
+                <div class="card-content">EEG Stream</div>
+                    <iframe src="http://localhost:5000/eeg_feed" width="100%" height="500" frameborder="0" scrolling="no">
                     </iframe>
             </div>''', unsafe_allow_html=True)
     
-with cols[2].container():
+    sub_cols_2 = st.columns([1, 1])
 
-    st.markdown('''
-            <div class="card">
-                <div class="card-content">Emotion</div>
-                    <iframe src="http://localhost:5000/emotion_feed" width="100%" height="500" frameborder="0" scrolling="no">
-                    </iframe>
-            </div>''', unsafe_allow_html=True)
-    
-    sub_cols = st.columns([1, 1])
-
-    with sub_cols[0].container():
+    with sub_cols_2[0].container():
         st.markdown('''
                 <div class="card">
-                    <div class="card-content">MNE</div>
+                    <div class="card-content">Scalp Maps</div>
                         <iframe src="http://localhost:5000/mne_feed" width="100%" height="500" frameborder="0" scrolling="no">
                         </iframe>
                 </div>''', unsafe_allow_html=True)
     
 
-    with sub_cols[1].container():
+    with sub_cols_2[1].container():
         st.markdown('''
                 <div class="card">
                     <div class="card-content" >Attention</div>
