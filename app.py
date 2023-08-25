@@ -114,7 +114,7 @@ def mne_feed():
 
 ########################################🌟 EEG PLOT###################################
 
-def pull_vreed_data(concatenated_data, time_step):
+def pull_data(concatenated_data, time_step):
     sample = concatenated_data[:,time_step]
     sample =sample*1e4
 
@@ -124,12 +124,12 @@ def pull_vreed_data(concatenated_data, time_step):
 
     return sample
 
-def generate_random_data(concatenated_data):
+def generate_data(concatenated_data):
 
     time_step = 0
 
     while True:
-        sample = pull_vreed_data(concatenated_data, time_step).tolist()
+        sample = pull_data(concatenated_data, time_step).tolist()
         time_step += 1
 
         json_data = json.dumps(
@@ -141,7 +141,7 @@ def generate_random_data(concatenated_data):
 @app.route('/eeg_feed_model')
 def eeg_feed_model():
     _, concatenated_data = load_eeg_data()
-    response = Response(stream_with_context(generate_random_data(concatenated_data)), mimetype="text/event-stream")
+    response = Response(stream_with_context(generate_data(concatenated_data)), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
 
