@@ -16,7 +16,7 @@ with st.sidebar:
     text_input = st.text_input("Enter condition of diffusion 👇", value = "")
 
     if text_input:
-        requests.post("http://192.168.1.172:5000/diffusion_post_cmd", json={"text_input": text_input})
+        requests.post("http://localhost:5000/diffusion_post_cmd", json={"text_input": text_input})
 
 
 cols = st.columns([1, 1, 1])
@@ -56,14 +56,14 @@ with cols[0].container():
     st.markdown('''
             <div class="card">
                 <div class="card-content">Pose Estimation</div>
-                <iframe src="http://192.168.1.172:5000/pose_feed" width="100%" height="500" frameborder="0" scrolling="no">
+                <iframe src="http://localhost:5000/pose_feed" width="100%" height="500" frameborder="0" scrolling="no">
                 </iframe>
             </div>''', unsafe_allow_html=True)
 
     st.markdown('''
             <div class="card">
                 <div class="card-content">Diffusion Model</div>
-                    <iframe src="http://192.168.1.172:5000/diffusion_feed" width="100%" height="500" frameborder="0" scrolling="no">
+                    <iframe src="http://localhost:5000/diffusion_feed" width="100%" height="500" frameborder="0" scrolling="no">
                     </iframe>
             </div>''', unsafe_allow_html=True)
 
@@ -71,7 +71,7 @@ with cols[1].container():
     st.markdown('''
             <div class="card">
                 <div class="card-content">EEG</div>
-                    <iframe src="http://192.168.1.172:5000/eeg_feed" width="100%" height="1110" frameborder="0" scrolling="no">
+                    <iframe src="http://localhost:5000/eeg_feed" width="100%" height="1110" frameborder="0" scrolling="no">
                     </iframe>
             </div>''', unsafe_allow_html=True)
     
@@ -80,7 +80,7 @@ with cols[2].container():
     st.markdown('''
             <div class="card">
                 <div class="card-content">Emotion</div>
-                    <iframe src="http://192.168.1.172:5000/emotion_feed" width="100%" height="500" frameborder="0" scrolling="no">
+                    <iframe src="http://localhost:5000/emotion_feed" width="100%" height="500" frameborder="0" scrolling="no">
                     </iframe>
             </div>''', unsafe_allow_html=True)
     
@@ -90,7 +90,7 @@ with cols[2].container():
         st.markdown('''
                 <div class="card">
                     <div class="card-content">MNE</div>
-                        <iframe src="http://192.168.1.172:5000/mne_feed" width="100%" height="500" frameborder="0" scrolling="no">
+                        <iframe src="http://localhost:5000/mne_feed" width="100%" height="500" frameborder="0" scrolling="no">
                         </iframe>
                 </div>''', unsafe_allow_html=True)
     
@@ -99,7 +99,7 @@ with cols[2].container():
         st.markdown('''
                 <div class="card">
                     <div class="card-content" >Attention</div>
-                    <iframe src="http://192.168.1.172:5000/attention_feed" width="100%" height="500" frameborder="0" scrolling="no">
+                    <iframe src="http://localhost:5000/attention_feed" width="100%" height="500" frameborder="0" scrolling="no">
                         </iframe>
                 </div>''', unsafe_allow_html=True)
         
