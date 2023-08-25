@@ -152,9 +152,6 @@ def eeg_feed():
     return render_template('eeg_feed.html')
 
 
-
-
-
 ########################################🌟 ATTENTION PLOT###################################
 
 # Define constants
@@ -183,7 +180,6 @@ def butter_highpass_filter(data, cutoff, fs, order=5):
 
 # Extract features from EEG data
 def extract_features(concatenated_eeg, time_window, time_points, window_blackman):
-
     col = len(select_ch) #7
     power_eeg = {}
     bin_eeg = {}
@@ -210,16 +206,13 @@ def extract_features(concatenated_eeg, time_window, time_points, window_blackman
         f, t, y1=scipy.signal.stft(concatenated_eeg[:,i],fs=128, window=window_blackman, nperseg=128, 
                       noverlap=0, nfft=1024, detrend=False,return_onesided=True, boundary='zeros',
                       padded=True)
-        # print(t)
-        # print(np.abs(y1).shape) # (512, 16)
+        
         power_eeg['data'][i,:, :]=(np.abs(y1))**2
-        # print('power_eeg is ', power_eeg) # 7, 513 16
         
     for chn in range(col):
         j=0
         for i in range(1,144,4):
             bin_eeg['data'][chn,j,:]=np.average(power_eeg['data'][chn,i:i+4,:],axis=0)
-            # print(power_eeg['data'][chn,i:i+4,:])
             j+=1
 
     for chn in range(col):
@@ -236,7 +229,6 @@ def extract_features(concatenated_eeg, time_window, time_points, window_blackman
         loaded_scaler = load('./models/scaler_knn.joblib')
         with open('./models/saved_model', 'rb') as f:
             mod = pickle.load(f)
-
 
     elif time_window == 5:
         loaded_scaler = load('./models/scaler_knn_5second.joblib')
