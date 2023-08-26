@@ -21,6 +21,8 @@ from mne import create_info
 from scipy import signal
 import pickle
 from joblib import load
+import matplotlib as mpl
+import matplotlib.cm as cm
 import warnings
 warnings.filterwarnings(action='ignore')
 
@@ -64,18 +66,26 @@ def preprocess_EEG_data(peoplelist, sfreq, band_pass_low, band_pass_high, sample
 # Generate MNE topomaps
 def generate_mne(info, concatenated_data):
     time_step = 0
+
+    # Plot the topomap
+    fig = plt.figure(figsize=(4, 4), facecolor='none')
+    ax = fig.add_subplot(111)
+
+    vmax = 5000
+    vmin = 4000
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    colormapping = cm.ScalarMappable(norm=norm, cmap='jet') #, cmap=cmap
+    time_step = 0
+    cbar = fig.colorbar(colormapping, ax=plt.gca(), location='bottom')
+
     while True:
         if time_step > concatenated_data.shape[1]:
             time_step = 0
 
-        # Plot the topomap
-        fig = plt.figure(figsize=(3, 3), facecolor='none')
-        ax = fig.add_subplot(111)
-
         mne.viz.plot_topomap(
             concatenated_data[:, time_step],
             info,
-            vlim=(4000, 5000),
+            vlim=(vmin, vmax),
             axes=ax,
             show=False,
             outlines='head',
