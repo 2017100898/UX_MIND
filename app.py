@@ -5,7 +5,6 @@ from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCM
 import torch
 from controlnet_aux import OpenposeDetector
 import atexit
-import mediapipe as mp
 import numpy as np
 from deepface import DeepFace
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -380,27 +379,14 @@ def emotion_feed():
 
 ########################################🌟 POSE ESTIMATION###################################
 
-def generate_frames(mp_holistic):
+def generate_frames(faceCascade):
     while True:
-        success, frame = cap.read()  # 프레임 읽기
+        success, frame = cap.read()
         if success:
-            # Mediapipe Holistic 모델로 landmark 감지
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = mp_holistic.process(frame_rgb)
-
-            # Holistic landmark 그리기
-            if results.pose_landmarks:
-                # 연결선 그리기
-                for connection in mp.solutions.holistic.POSE_CONNECTIONS:
-                    start_idx, end_idx = connection
-                    start_point = tuple(np.multiply([results.pose_landmarks.landmark[start_idx].x, results.pose_landmarks.landmark[start_idx].y], [frame.shape[1], frame.shape[0]]).astype(int))
-                    end_point = tuple(np.multiply([results.pose_landmarks.landmark[end_idx].x, results.pose_landmarks.landmark[end_idx].y], [frame.shape[1], frame.shape[0]]).astype(int))
-                    cv2.line(frame, start_point, end_point, (255, 255, 255), 2)
-                
-                # 랜드마크 점 그리기
-                for landmark in results.pose_landmarks.landmark:
-                    landmark_point = tuple(np.multiply([landmark.x, landmark.y], [frame.shape[1], frame.shape[0]]).astype(int))
-                    cv2.circle(frame, landmark_point, 2, (255, 255, 255), -1)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = faceCascade.detectMultiScale(gray, 1.1, 5)
+            for (x,y,w,h) in faces:
+                cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2)
 
             # 프레임을 바이트로 변환하여 스트리밍
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -409,13 +395,11 @@ def generate_frames(mp_holistic):
                 yield (b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-# 비디오 스트리밍 라우트
 @app.route('/pose_feed_model')
 def pose_feed_model():
-    # Mediapipe Holistic 모델 초기화
-    mp_holistic = mp.solutions.holistic.Holistic(model_complexity=1)
+    faceCascade = cv2.CascadeClassifier("./models/haarcascade_frontalface_alt.xml")
 
-    response = Response(generate_frames(mp_holistic), mimetype='multipart/x-mixed-replace; boundary=frame')
+    response = Response(generate_frames(faceCascade), mimetype='multipart/x-mixed-replace; boundary=frame')
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
 
