@@ -22,6 +22,14 @@ import pickle
 from joblib import load
 import matplotlib as mpl
 import matplotlib.cm as cm
+from PyQt5 import QtWidgets
+import numpy as np
+import math
+import pylsl
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore, QtGui
+from typing import List
+from pylsl import StreamInlet, resolve_stream
 import warnings
 warnings.filterwarnings(action='ignore')
 
@@ -65,9 +73,10 @@ def preprocess_EEG_data(peoplelist, sfreq, band_pass_low, band_pass_high, sample
 # Generate MNE topomaps
 def generate_mne(info, concatenated_data):
     time_step = 0
+    plt.style.use("dark_background")
 
     # Plot the topomap
-    fig = plt.figure(figsize=(4, 4), facecolor='none')
+    fig = plt.figure(figsize=(8, 5), facecolor='none')
     ax = fig.add_subplot(111)
 
     vmax = 5000
@@ -75,7 +84,7 @@ def generate_mne(info, concatenated_data):
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     colormapping = cm.ScalarMappable(norm=norm, cmap='jet') #, cmap=cmap
     time_step = 0
-    cbar = fig.colorbar(colormapping, ax=plt.gca(), location='bottom')
+    cb = fig.colorbar(colormapping, ax=plt.gca(), location='right', pad=0.04)
 
     while True:
         if time_step > concatenated_data.shape[1]:
@@ -92,8 +101,6 @@ def generate_mne(info, concatenated_data):
             sensors=False,
             contours=0
         )
-
-        fig.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
 
         # Convert the plot to an image
         canvas = FigureCanvas(fig)
