@@ -1,36 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        body, html {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+        }
+        
+        #container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .canvas-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .canvas-wrapper {
+            width: 100%;
+            flex-direction: column;
+            height: calc(100vh / 14); /* 창 높이를 plot 수로 나눈 값 */
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* 아래 스타일을 추가해 그리드를 모두 제거합니다. */
+        .canvas-wrapper canvas {
+            border: none;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row">
-            {% for i in range(1, 15) %}
-            <div class="col-12">
-                <canvas id="canvas{{ i }}" style="height:4vh;"></canvas>
-            </div>
-            {% endfor %}
+<div id="container">
+    <div class="canvas-container">
+        {% for i in range(0, 14) %}
+        <div class="canvas-wrapper">
+            <canvas id="canvas{{ i }}"></canvas>
         </div>
+        {% endfor %}
     </div>
-    <!--suppress JSUnresolvedLibraryURL -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
-    <!--suppress JSUnresolvedLibraryURL -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
-    <!--suppress JSUnresolvedLibraryURL -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
-    <script>
+</div>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
+<script>
+
     $(document).ready(function () {
-        const createConfig = () => {
+        const getMaxLegendLength = (names) => {
+            return names.reduce((max, name) => Math.max(max, name.length), 0);
+        };
+
+        const createConfig = (channelName, color, maxLegendLength) => {
             return {
                 type: 'line',
                 data: {
                     labels: [],
                     datasets: [{
-                        borderColor: '#ABE7E1',
+                        label: channelName,
+                        borderColor: color,
                         borderWidth: 2,
                         data: [],
                         fill: false,
@@ -44,39 +85,57 @@
                         mode: 'nearest',
                         intersect: false
                     },
-                    scales: {
-                        xAxes: [{
-                            display: false,
-                            scaleLabel: {
-                                display: false,
-                                labelString: 'Time'
-                            }
-                        }],
-                        yAxes: [{
-                            display: false,
-                            scaleLabel: {
-                                display: false,
-                                labelString: 'Value'
-                            }
-                        }]
-                    },
                     title: {
                         display: false
                     },
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'left',
+                        labels: {
+                            fontColor: color,
+                            fontSize: 19,
+                            boxWidth: 0,
+                        }
+                    },
+
+                    scales: {
+                        xAxes: [{
+                            display: false, // X축 그리드 제거
+                            ticks: {
+                                display: false //this will remove only the label
+                            },
+                            gridLines: {
+                                display: false
+                            }
+                        }],
+                        yAxes: [{
+                            display: false, // Y축 그리드 제거
+                            ticks: {
+                                display: false //this will remove only the label
+                            },
+                            gridLines: {
+                                display: false // Y축 그리드 제거
+                            }
+                        }]
+                    },
+
+                    tooltips: {
+                        enabled: false
                     }
                 }
             };
         };
-        // Create an array to hold line chart instances
-        const lineCharts = [];
 
-        // Repeat this loop for each line plot
-        for (let i = 1; i <= 14; i++) {
+        const lineCharts = [];
+        const channelNames = ['AF3', 'F7 ', 'F3 ', 'FC5', 'T7 ', 'P7 ', 'O1 ', 'O2 ', 'P8 ', 'T8 ', 'FC6', 'F4 ', 'F8 ', 'AF4'];
+        const colors = ['#FF00FF', '#FF9900', '#FFFF00', '#BAFF1A', '#00FF80', '#00FFFF', '#8000FF', '#FFCCFF', '#FFD700', '#C71585', '#8A2BE2', '#32CD32', '#00FA9A', '#1E90FF'];
+
+        const maxLegendLength = getMaxLegendLength(channelNames);
+
+        for (let i = 0; i < channelNames.length; i++) {
             const canvasId = `canvas${i}`;
             const canvas = document.getElementById(canvasId).getContext('2d');
-            const lineChart = new Chart(canvas, createConfig());
+            const lineChart = new Chart(canvas, createConfig(channelNames[i], colors[i], maxLegendLength));
             lineCharts.push(lineChart);
         }
 
@@ -86,17 +145,19 @@
             const data = JSON.parse(event.data);
 
             lineCharts.forEach((chart, index) => {
-                if (chart.data.labels.length >= 128) {
+
+                chart.data.labels.push(data.time);
+                chart.data.datasets[0].data.push(data.value[index]);
+
+                if (chart.data.labels.length >= 200) {
                     chart.data.labels.shift();
                     chart.data.datasets[0].data.shift();
                 }
 
-                chart.data.labels.push(data.time);
-                chart.data.datasets[0].data.push(data.value[index]);
                 chart.update();
             });
         };
     });
-    </script>
+</script>
 </body>
 </html>

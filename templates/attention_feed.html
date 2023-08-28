@@ -1,22 +1,29 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Attention Feed</title>
     <style>
-            body, html {
+        body, html {
             height: 100%;
+            width: 100%;
             margin: 0;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
         }
-        .container {
-            text-align: center;
-            margin-top: 50px;
+        
+        #container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .attention-value {
-            font-size: 24px;
-            font-weight: bold;
+        
+        #attentionChart {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -25,13 +32,12 @@
     <script src="https://unpkg.com/chartjs-plugin-datalabels@0.7.0/dist/chartjs-plugin-datalabels.js"></script>
 </head>
 <body>
-    <div class="container">
-        <canvas id="attention-chart" height="100%"></canvas>
+    <div id="container">
+        <canvas id="attentionChart" ></canvas>
     </div>
 
     <script>
-        const attentionValueElement = document.getElementById("attention-value");
-        const attentionChartElement = document.getElementById("attention-chart");
+        const attentionChartElement = document.getElementById("attentionChart");
         const attentionChartCtx = attentionChartElement.getContext("2d");
 
         const eventSource = new EventSource("/attention_feed_model");
@@ -71,19 +77,19 @@
                             return context.chart.data.labels[context.dataIndex];
                         },
                         font: {
-                            size: 16,
+                            size: 25,
                             weight: 'bold',
-                            color: 'white'
+                            color: 'black'
                         },
-                        color: 'white',
+                        color: 'black',
                         backgroundColor: null,
-                        anchor: 'end',
-                        align: 'end',
+                        anchor: 'center',
+                        align: 'center',
                         padding: {
-                            top: 2,
+                            top: 10,
                             bottom: 2,
-                            left: 5,
-                            right: 5
+                            left: 10,
+                            right: 10
                         },
                         offset: 10, // Adjust the offset to position the labels better
                     }
