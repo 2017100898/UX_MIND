@@ -21,9 +21,9 @@ from scipy import signal
 import pickle
 from joblib import load
 import matplotlib as mpl
+from PIL import Image
 import matplotlib.cm as cm
 from PyQt5 import QtWidgets
-import numpy as np
 import math
 import pylsl
 import pyqtgraph as pg
@@ -152,7 +152,7 @@ def generate_data(concatenated_data):
             {'time': time_step, 'value': sample})
 
         yield f"data:{json_data}\n\n"
-        time.sleep(0.01)
+        time.sleep(0.05)
 
 @app.route('/eeg_feed_model')
 def eeg_feed_model():
@@ -179,6 +179,7 @@ TIME_WINDOW = 5
 
 select_ch = ['F7', 'F3', 'AF4', 'P7', 'P8', 'O1', 'O2']
 use_channel_inds = []
+focus = "focus" 
 
 # Apply a Butterworth high-pass filter
 def butter_highpass(cutoff, fs, order=5):
@@ -264,6 +265,7 @@ def extract_features(concatenated_eeg, time_window, time_points, window_blackman
     return knn_focus['data'].T,loaded_scaler, mod
 
 def get_attention(concatenated_data):
+    global focus
     time_step = 0
     time_points = TIME_WINDOW * SFREQ
     t_win = np.arange(0, 128)
@@ -284,11 +286,11 @@ def get_attention(concatenated_data):
         realtime_data_scaled = loaded_scaler.transform(realtime_data)
         
         value = mod.predict(realtime_data_scaled)[0]
-        #result = "focus" if value == 0 else ("unfocus" if value == 1 else ("drowsy" if value == 2 else "unknown"))
+        focus = "focus" if value == 0 else ("unfocus" if value == 1 else ("drowsy" if value == 2 else "unknown"))
 
         yield f"data: {value}\n\n"
         
-        time.sleep(0.1)  # Pause for 0.5 seconds before the next update
+        time.sleep(10)  # Pause for 0.5 seconds before the next update
 
 @app.route('/attention_feed_model')
 def attention_feed_model():
@@ -306,25 +308,33 @@ def attention_feed():
 
 ########################################🌟 DIFFUSION MODEL###################################
 
-cmd = "supermario"
+cmd = "astronaut character"
 
-# 이미지를 생성하여 스트리밍하는 함수
 def generate_images(openpose, pipe):
-    global cmd
-
+    global cmd, focus
     while True:
         ret, frame = cap.read()
         pose_img = openpose(frame)
         image_output = pipe(cmd + ", masterpiece,  distinct_image, high_contrast, 8K, best quality, high_resolution", pose_img, negative_prompt="monochrome, lowres, bad anatomy, worst quality, low quality", num_inference_steps=15).images[0]
         
-        # 이미지를 바이트 형태로 변환
+        # Convert the images to numpy arrays
+        pose_img_np = np.array(pose_img)
+        image_output_np = np.array(image_output)
+
+        # Combine the images side by side
+        combined_img = np.concatenate((pose_img_np, image_output_np), axis=1)
+
+        # Convert the combined image to PIL image
+        combined_pil_img = Image.fromarray(combined_img)
+
+        # Convert the PIL image to bytes
         img_byte_array = io.BytesIO()
-        image_output.save(img_byte_array, format='JPEG')
+        combined_pil_img.save(img_byte_array, format='JPEG')
         img_bytes = img_byte_array.getvalue()
 
         yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + img_bytes + b'\r\n')
-
+            b'Content-Type: image/jpeg\r\n\r\n' + img_bytes + b'\r\n')
+        
 @app.route('/diffusion_post_cmd', methods = ['POST'])
 def diffusion_post_cmd():
     global cmd
@@ -333,7 +343,7 @@ def diffusion_post_cmd():
 
     return Response(status=200)
 
-@app.route('/diffusion_feed_model', methods = ['GET'])
+@app.route('/diffusion_feed_model', methods=['GET'])
 def diffusion_feed_model():
     # OpenPose 모델 및 Diffusion 초기화
     openpose = OpenposeDetector.from_pretrained('lllyasviel/ControlNet')
@@ -358,7 +368,7 @@ def diffusion_feed():
 
 @app.route('/emotion_feed_model')
 def emotion_feed_model():
-    emotions = ["sad", "disgust", "angry", "surprise", "fear", "neutral", "happy"]
+    emotions = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"]
 
     def generate_emotion_data():
         while True:
@@ -371,13 +381,11 @@ def emotion_feed_model():
 
                 # Create JSON data to send to the front-end
                 json_data = json.dumps({'emotions': emotions, 'probabilities': probabilities})
-                
                 yield f"data:{json_data}\n\n"
             
     response = Response(generate_emotion_data(), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
-
     return response
 
 @app.route('/emotion_feed')
@@ -419,10 +427,9 @@ def pose_feed():
 
 ###########################################################################################
 
-# Flask 애플리케이션 종료시에 비디오 캡처 릴리즈
 @atexit.register
 def release_capture():
     cap.release()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=False)
+    app.run(host='0.0.0.0', port='5000', debug=False)
