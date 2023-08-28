@@ -17,6 +17,7 @@ st.markdown(reduce_header_height_style, unsafe_allow_html=True)
 
 st.header("AIMS Dashboard")
 
+
 card_css = """
 <style>
 .card {
@@ -35,6 +36,7 @@ card_css = """
     display: flex;
     flex-direction: row;
     align-items: center;
+    margin-bottom: 5px;
 }
 
 .card-title > * + * {
@@ -87,7 +89,7 @@ card_css = """
     visibility: visible;
 }
 
-#transformSelect {
+#seledtBox {
             color: white;
             border: 1px solid white;
             background-color: transparent;
@@ -95,7 +97,7 @@ card_css = """
             border-radius: 5px;
         }
 
-#transformSelect option {
+#seledtBox option {
     color: black;
     border: 1px solid white;
 }
@@ -114,7 +116,7 @@ with cols[0].container():
         st.markdown('''
                 <div class="card">
                     <div class="card-content">\t</div>
-                    <iframe src="http://localhost:5000/pose_feed" width="100%" height="490" frameborder="0" scrolling="no">
+                    <iframe src="http://localhost:5000/pose_feed" width="100%" height="485" frameborder="0" scrolling="no">
                     </iframe>
                 </div>''', unsafe_allow_html=True)
         
@@ -131,19 +133,20 @@ with cols[0].container():
                 </div>''', unsafe_allow_html=True)
     
     st.markdown('''
-            <div class="card">
-                <div class = "card-title">
+        <div class="card">
+            <div class="card-title">
                 <div class="card-content">Transform into</div>
-                <select id="transformSelect">
-                    <option value="option1">Astronaut</option>
-                    <option value="option2">Spiderman</option>
-                    <option value="option3">Cat</option>
+                <select id="seledtBox" onchange="handleSelectChange()">
+                    <option id="0" value="option1">Astronaut</option>
+                    <option id="1" value="option2">Spiderman</option>
+                    <option id="2" value="option3">Cat</option>
                 </select>
-                </div>
-                <iframe src="http://localhost:5000/diffusion_feed" width="100%" height="450" frameborder="0" scrolling="no">
-                </iframe>
             </div>
-            ''', unsafe_allow_html=True)
+            <iframe src="http://localhost:5000/diffusion_feed" width="100%" height="450" frameborder="0" scrolling="no">
+            </iframe>
+        </div>
+        ''', unsafe_allow_html=True)
+
     
 with cols[1].container():
     st.markdown('''
