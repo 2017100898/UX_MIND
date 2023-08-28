@@ -2,8 +2,8 @@ import requests
 import streamlit as st
 
 st.set_page_config(
-    page_title="AIMS Dashboard",
-    page_icon="🚀",
+    page_title="RIME Dashboard",
+    page_icon="🍋",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -15,8 +15,7 @@ reduce_header_height_style = """
 """
 st.markdown(reduce_header_height_style, unsafe_allow_html=True)
 
-st.header("AIMS Dashboard")
-
+st.title(":green[RIME] Dashboard :lemon:")
 
 card_css = """
 <style>
