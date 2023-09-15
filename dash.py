@@ -140,7 +140,6 @@ with cols[0].container():
                 <div class="card">
                     <div class = "card-title" >
                     <div class="card-content">Emotion</div>
-                    <div class="tooltip-trigger" data-tooltip="이곳에 표시될 내용을 입력하세요.">❔</div> 
                     </div>
                         <iframe src="http://localhost:5000/emotion_feed" width="100%" height="450" frameborder="0" scrolling="no">
                         </iframe>
@@ -149,11 +148,7 @@ with cols[0].container():
     st.markdown('''
         <div class="card">
             <div class="card-title">
-                <div class="card-content">Transform into</div>
-                <select id="seledtBox" style="font-size: 20px;" onchange="handleSelectChange()">
-                    <option id="0" value="option1">Character</option>
-                    <option id="1" value="option2">Spiderman</option>
-                    <option id="2" value="option3">Cat</option>
+                <div class="card-content">Transform into Character</div>
                 </select>
             </div>
             <iframe src="http://localhost:5000/diffusion_feed" width="100%" height="450" frameborder="0" scrolling="no">
@@ -167,7 +162,6 @@ with cols[1].container():
             <div class="card">
                     <div class = "card-title">
                     <div class="card-content">EEG Stream</div>
-                    <div class="tooltip-trigger" data-tooltip="이곳에 표시될 내용을 입력하세요.">❔</div> 
                     </div>
                     <iframe src="http://localhost:5000/eeg_feed" width="100%" height="550" frameborder="0" scrolling="no">
                     </iframe>
@@ -180,7 +174,6 @@ with cols[1].container():
                 <div class="card">
                     <div class = "card-title">
                     <div class="card-content">EEG Scalp Maps</div>
-                    <div class="tooltip-trigger" data-tooltip="이곳에 표시될 내용을 입력하세요.">❔</div> 
                     </div>
                         <iframe src="http://localhost:5000/mne_feed" width="100%" height="350" frameborder="0" scrolling="no">
                         </iframe>
@@ -192,7 +185,6 @@ with cols[1].container():
                 <div class="card">
                     <div class = "card-title">
                     <div class="card-content">Attention</div>
-                    <div class="tooltip-trigger" data-tooltip="이곳에 표시될 내용을 입력하세요.">❔</div> 
                     </div>
                     <iframe src="http://localhost:5000/attention_feed" width="100%" height="350" frameborder="0" scrolling="no">
                         </iframe>
