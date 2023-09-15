@@ -2,7 +2,7 @@ import requests
 import streamlit as st
 
 st.set_page_config(
-    page_title="RIME Dashboard",
+    page_title="MIND",
     page_icon="🍋",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -15,7 +15,22 @@ reduce_header_height_style = """
 """
 st.markdown(reduce_header_height_style, unsafe_allow_html=True)
 
-st.title(":green[RIME] Dashboard :lemon:")
+
+st.markdown("""
+    <style>
+        .title-text {
+            color: #ABE7E1;
+        }
+        .white-text {
+            color: white;
+        }
+    </style>
+    <h1 class="white-text">
+            <span class="title-text"">M</span>ultimodal
+            <span class="title-text">IN</span>teractive 
+            <span class="title-text">D</span>ashboard
+    </h1>
+""", unsafe_allow_html=True)
 
 card_css = """
 <style>
@@ -46,7 +61,7 @@ card_css = """
     display: flex;
     flex-direction: column;
     color: white;
-    font-size: 22px;
+    font-size: 28px;
     font-weight: bold;
 }
 
@@ -135,8 +150,8 @@ with cols[0].container():
         <div class="card">
             <div class="card-title">
                 <div class="card-content">Transform into</div>
-                <select id="seledtBox" onchange="handleSelectChange()">
-                    <option id="0" value="option1">Astronaut</option>
+                <select id="seledtBox" style="font-size: 20px;" onchange="handleSelectChange()">
+                    <option id="0" value="option1">Character</option>
                     <option id="1" value="option2">Spiderman</option>
                     <option id="2" value="option3">Cat</option>
                 </select>
