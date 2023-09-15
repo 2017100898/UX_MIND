@@ -70,9 +70,7 @@ def load_realtime_eeg_data():
 # Generate MNE topomaps
 def generate_mne(info, inlet):
     plt.style.use("dark_background")
-
-    # Plot the topomap
-    fig = plt.figure(figsize=(8, 5), facecolor='none')
+    fig = plt.figure(figsize=(7, 4), facecolor='none')
     ax = fig.add_subplot(111)
 
     vmax = 4500
@@ -316,31 +314,36 @@ def attention_feed():
 
 
 ########################################🌟 DIFFUSION MODEL###################################
-
-cmd = "astronaut character"
+cmd = "Character"
 
 def generate_images(openpose, pipe):
-    global cmd, focus
-    while True:
+    global cmd, diff_focus, diff_emotion
+    success = True
+    
+    focus_cmd = "strongly"
+    emotion_cmd  = "happy"
+
+    while success:
+        if diff_focus == "drowsy" or diff_focus == "unfocus":
+            focus_cmd = "drowsy"        
+        else:
+            focus_cmd = "strongly"
+
+        emotion_cmd = diff_emotion
         ret, frame = cap.read()
+
         pose_img = openpose(frame)
-        image_output = pipe(cmd + ", masterpiece,  distinct_image, high_contrast, 8K, best quality, high_resolution", pose_img, negative_prompt="monochrome, lowres, bad anatomy, worst quality, low quality", num_inference_steps=15).images[0]
-        
-        # Convert the images to numpy arrays
-        pose_img_np = np.array(pose_img)
-        image_output_np = np.array(image_output)
 
-        # Combine the images side by side
-        combined_img = np.concatenate((pose_img_np, image_output_np), axis=1)
-
-        # Convert the combined image to PIL image
+        image_output = pipe(f"{focus_cmd} + ' ' + {emotion_cmd}, beautiful, highly insanely detailed, top quality, best quality, 4k, 8k, art single girl character, art like, very high quality", pose_img, negative_prompt="normal quality, low quality, worst quality, jpeg artifacts, chinese, username, watermark, signature, time signature, timestamp, artist name, copyright name, copyright, loli, child, infant, baby, bad anatomy, extra hands, extra legs, extra digits, extra_fingers, wrong finger, inaccurate limb, African American, African, tits, nipple, pubic hair", num_inference_steps=15).images[0]
+        combined_img = np.concatenate((pose_img, image_output), axis=1)
         combined_pil_img = Image.fromarray(combined_img)
 
-        # Convert the PIL image to bytes
         img_byte_array = io.BytesIO()
         combined_pil_img.save(img_byte_array, format='JPEG')
-        img_bytes = img_byte_array.getvalue()
+        img_bytes = img_byte_array.getbuffer()
 
+        yield (b'--frame\r\n'
+            b'Content-Type: image/jpeg\r\n\r\n' + img_bytes + b'\r\n')
         yield (b'--frame\r\n'
             b'Content-Type: image/jpeg\r\n\r\n' + img_bytes + b'\r\n')
         
@@ -356,7 +359,7 @@ def diffusion_post_cmd():
 def diffusion_feed_model():
     # OpenPose 모델 및 Diffusion 초기화
     openpose = OpenposeDetector.from_pretrained('lllyasviel/ControlNet')
-    controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-openpose", torch_dtype=torch.float16)
+    controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11p_sd15_openpose", torch_dtype=torch.float16)
     pipe = StableDiffusionControlNetPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", controlnet=controlnet, safety_checker=None, torch_dtype=torch.float16)
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.enable_model_cpu_offload(gpu_id=0)
@@ -374,13 +377,17 @@ def diffusion_feed():
 
 
 ########################################🌟 EMOTION RECOGNITION###################################
+diff_emotion = "happy"
 
 @app.route('/emotion_feed_model')
 def emotion_feed_model():
     emotions = ["angry", "disgust", "fear", "happy", "sad", "surprise", "neutral"]
 
     def generate_emotion_data():
-        while True:
+        global diff_emotion
+        success = True
+
+        while success:
             success, frame = cap.read()                               
             if success:
                 # Perform emotion analysis
@@ -388,6 +395,10 @@ def emotion_feed_model():
                 emotion_data = predictions[0]['emotion']
                 probabilities = [emotion_data[emotion] for emotion in emotions]
 
+                max_probability_index = probabilities.index(max(probabilities))
+                max_emotion = emotions[max_probability_index]
+
+                diff_emotion = max_emotion
                 # Create JSON data to send to the front-end
                 json_data = json.dumps({'emotions': emotions, 'probabilities': probabilities})
                 yield f"data:{json_data}\n\n"
@@ -410,7 +421,7 @@ def generate_frames(faceCascade):
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = faceCascade.detectMultiScale(gray, 1.1, 5)
             for (x,y,w,h) in faces:
-                cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 2)
+                cv2.rectangle(frame, (x,y), (x+w, y+h), (0,255,0), 4)
 
             # 프레임을 바이트로 변환하여 스트리밍
             ret, buffer = cv2.imencode('.jpg', frame)
