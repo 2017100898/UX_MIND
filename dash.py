@@ -130,7 +130,7 @@ with cols[0].container():
         st.markdown('''
                 <div class="card">
                     <div class="card-content">\t</div>
-                    <iframe src="http://localhost:5000/pose_feed" width="100%" height="485" frameborder="0" scrolling="no">
+                    <iframe src="http://localhost:5000/face_feed" width="100%" height="485" frameborder="0" scrolling="no">
                     </iframe>
                 </div>''', unsafe_allow_html=True)
         

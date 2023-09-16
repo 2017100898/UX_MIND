@@ -346,14 +346,6 @@ def generate_images(openpose, pipe):
             b'Content-Type: image/jpeg\r\n\r\n' + img_bytes + b'\r\n')
         yield (b'--frame\r\n'
             b'Content-Type: image/jpeg\r\n\r\n' + img_bytes + b'\r\n')
-        
-@app.route('/diffusion_post_cmd', methods = ['POST'])
-def diffusion_post_cmd():
-    global cmd
-    data = request.get_json()
-    cmd = data.get('text_input')
-
-    return Response(status=200)
 
 @app.route('/diffusion_feed_model', methods=['GET'])
 def diffusion_feed_model():
@@ -430,8 +422,8 @@ def generate_frames(faceCascade):
                 yield (b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-@app.route('/pose_feed_model')
-def pose_feed_model():
+@app.route('/face_feed_model')
+def face_feed_model():
     faceCascade = cv2.CascadeClassifier("./models/haarcascade_frontalface_alt.xml")
 
     response = Response(generate_frames(faceCascade), mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -440,9 +432,9 @@ def pose_feed_model():
 
     return response
 
-@app.route('/pose_feed')
-def pose_feed():
-    return render_template('pose_feed.html')
+@app.route('/face_feed')
+def face_feed():
+    return render_template('face_feed.html')
 
 
 ###########################################################################################
