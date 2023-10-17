@@ -3,7 +3,7 @@ import streamlit as st
 
 st.set_page_config(
     page_title="MIND",
-    page_icon="🍋",
+    page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -19,25 +19,27 @@ st.markdown(reduce_header_height_style, unsafe_allow_html=True)
 st.markdown("""
     <style>
         .title-text {
-            color: #ABE7E1;
+        -webkit-text-fill-color: #1A2374; /* Will override color (regardless of order) */
+
         }
         .white-text {
-            color: white;
+            color: #919AAA;
         }
     </style>
     <h1 class="white-text">
-            <span class="title-text"">M</span>ultimodal
-            <span class="title-text">IN</span>teractive 
-            <span class="title-text">D</span>ashboard
+        <span class="title-text">M</span>ultimodal
+        <span class="title-text">IN</span>teractive
+        <span class="title-text">D</span>ashboard
     </h1>
 """, unsafe_allow_html=True)
+
 
 card_css = """
 <style>
 .card {
     border-radius: 15px;
     padding: 20px;
-    background-color: #1C1C2A;
+    background-color: #FFFFFF;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px; /* 카드 사이 간격 추가 */
     display: flex;
@@ -60,7 +62,7 @@ card_css = """
 .card-content {
     display: flex;
     flex-direction: column;
-    color: white;
+    color: #919AAA;
     font-size: 28px;
     font-weight: bold;
 }
@@ -123,14 +125,16 @@ cols = st.columns([1, 1])
 
 st.markdown(card_css, unsafe_allow_html=True)
 
-with cols[0].container():
+with cols[1].container():
     sub_cols_1 = st.columns([1, 1])
 
     with sub_cols_1[0].container():
         st.markdown('''
                 <div class="card">
-                    <div class="card-content">\t</div>
-                    <iframe src="http://localhost:5000/face_feed" width="100%" height="485" frameborder="0" scrolling="no">
+                    <div class = "card-title">
+                    <div class="card-content">Webcam</div>
+                    </div>
+                    <iframe src="http://localhost:5000/face_feed" width="100%" height="450" frameborder="0" scrolling="no">
                     </iframe>
                 </div>''', unsafe_allow_html=True)
         
@@ -157,7 +161,7 @@ with cols[0].container():
         ''', unsafe_allow_html=True)
 
     
-with cols[1].container():
+with cols[0].container():
     st.markdown('''
             <div class="card">
                     <div class = "card-title">

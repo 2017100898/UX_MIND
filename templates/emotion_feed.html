@@ -37,7 +37,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: black;
             text-align: center;
         }
         
@@ -63,7 +63,7 @@
             labels: ["Angry", "Disgust", "Fear", "Happy", "Sad", "Surprise", "Neutral"],
             datasets: [{
                 label: 'Emotion Probability',
-                backgroundColor: '#ABE7E1',
+                backgroundColor: '#99E7EB',
                 data: [0, 0, 0, 0, 0, 0, 0],
             }]
         };
@@ -81,7 +81,7 @@
                         max: 100,
                         ticks: {
                             autoSkip: false,
-                            color: 'white',
+                            color: 'black',
                             font: {
                                 size: 20
                             }
@@ -95,7 +95,7 @@
                         display: true,
                         ticks: {
                             autoSkip: false,
-                            color: 'white',
+                            color: 'black',
                             font: {
                                 size: 20,
                             }
@@ -130,7 +130,7 @@
             // Find the index of the highest probability
             const highestProbabilityIndex = data.probabilities.indexOf(Math.max(...data.probabilities));
             const labels = emotionChart.data.labels;
-            const emojis = [ '😡',  '🤢', '😨',  '😄', '😢', '😲','😐']
+            const emojis = ['😡', '🤢', '😨', '😄', '😢', '😲','😐']
 
             // Get the label name and probability percentage
             const highestEmotionLabel = labels[highestProbabilityIndex];
