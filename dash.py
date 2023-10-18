@@ -19,17 +19,16 @@ st.markdown(reduce_header_height_style, unsafe_allow_html=True)
 st.markdown("""
     <style>
         .title-text {
-        -webkit-text-fill-color: #1A2374; /* Will override color (regardless of order) */
-
+        -webkit-text-fill-color: #555E6F; /* Will override color (regardless of order) */
+        font-size: 70px;
         }
         .white-text {
-            color: #919AAA;
+            color: #555E6F;
+            font-size: 55px;
         }
     </style>
     <h1 class="white-text">
-        <span class="title-text">M</span>ultimodal
-        <span class="title-text">IN</span>teractive
-        <span class="title-text">D</span>ashboard
+        🧠 <span class="title-text">A</span>MIDUE
     </h1>
 """, unsafe_allow_html=True)
 
@@ -62,7 +61,7 @@ card_css = """
 .card-content {
     display: flex;
     flex-direction: column;
-    color: #919AAA;
+    color: #555E6F;
     font-size: 28px;
     font-weight: bold;
 }
