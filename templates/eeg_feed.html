@@ -14,7 +14,7 @@
         }
         
         #container {
-            width: 40%;
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -54,15 +54,16 @@
 <!--suppress JSUnresolvedLibraryURL -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
 <!--suppress JSUnresolvedLibraryURL -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<!--suppress JSUnresolvedLibraryURL -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
 <script>
-
     $(document).ready(function () {
         const getMaxLegendLength = (names) => {
             return names.reduce((max, name) => Math.max(max, name.length), 0);
         };
 
-        const createConfig = (channelName, color,  maxLegendLength) => {
+        const createConfig = (channelName, color, maxLegendLength) => {
             return {
                 type: 'line',
                 data: {
@@ -70,60 +71,65 @@
                     datasets: [{
                         label: channelName,
                         borderColor: color,
-                        borderWidth: 1,
+                        borderWidth: 2,
                         data: [],
                         fill: false,
                         pointRadius: 0,
                     }],
                 },
                 options: {
+                    animation: {
+                        duration: 0,
+                        delay : 0,
+                        easing: 'linear'
+                    },
+                    interaction: {
+                    intersect: false
+                    },
+                    
                     responsive: true,
                     maintainAspectRatio: false,
                     hover: {
                         mode: 'nearest',
                         intersect: false
                     },
-                    scales: {
-                        x: {
-                            display: false, // X축 그리드 제거
-                            ticks: {
-                                display: false //this will remove only the label
-                            },
-                            gridLines: {
-                                display: false
-                            },
-                        },
-                        y: {
-                            display: false, // Y축 그리드 제거
-                            ticks: {
-                                display: false, //this will remove only the label
-                                //min: min,
-                                //max: max
-                            },
-                            gridLines: {
-                                display: false // Y축 그리드 제거
-                            }
-                        }
+                    title: {
+                        display: false
                     },
-                    plugins:{
-                        tooltip: {
-                            enabled: false
-                        },
-                        legend: {
+                    legend: {
                         display: true,
                         position: 'left',
                         labels: {
-                            color: color,
+                            fontColor: color,
+                            fontSize: 10,
                             boxWidth: 0,
-                            title: {
-                                
-                            font: {
-                                size: 19
-                            }
-                            }
                         }
-                    }
                     },
+                    scales: {
+                        xAxes: [{
+                            display: false,
+                            ticks: {
+                                display: false
+                            },
+                            gridLines: {
+                                display: false
+                            }
+                        }],
+                        yAxes: [{
+                            display: false,
+                            ticks: {
+                                //min:4000,
+                                //max:4300,
+                                display: false
+                            },
+                            gridLines: {
+                                display: false
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        enabled: false
+                    }
                 }
             };
         };
@@ -175,35 +181,41 @@
 
       const maxLegendLength = getMaxLegendLength(channelNames);
 
+      const queueSize = 100; // 큐의 최대 크기
+        const dataQueue = new Array(queueSize).fill(null).map(() => ({
+            time: null,
+            value: Array(channelNames.length).fill(null)
+        }));
+
         for (let i = 0; i < channelNames.length; i++) {
             const canvasId = `canvas${i}`;
             const canvas = document.getElementById(canvasId).getContext('2d');
-            const lineChart = new Chart(canvas, createConfig(channelNames[i], colors[i],maxLegendLength));
+            const lineChart = new Chart(canvas, createConfig(channelNames[i], colors[i], maxLegendLength));
             lineCharts.push(lineChart);
         }
 
-        const maxDataPoints = 32;
-
-        const source = new EventSource("/eeg_feed_model");
-
+        const source = new EventSource("/eeg_feed_model"); 
         source.onmessage = function (event) {
             const data = JSON.parse(event.data);
 
-            lineCharts.forEach((chart, index) => {
-            // labels와 datasets.data 배열의 길이가 최대 데이터 포인트 수를 초과하면 삭제
-            if (chart.data.labels.length > maxDataPoints) {
-                chart.data.labels.splice(0, 1);
-                chart.data.datasets[0].data.splice(0, 1);
-            }
-
-            // labels와 datasets.data 배열에 데이터 추가
-            chart.data.labels.push(data.time);
-            chart.data.datasets[0].data.push(data.value[index]);
-            
-            chart.update();
-            });
+            // 큐에서 데이터를 추출하고 새로운 데이터를 큐에 추가
+            const newDataPoint = {
+                time: data.time,
+                value: data.value
             };
-    });
+
+            dataQueue.shift();
+            dataQueue.push(newDataPoint);
+
+            lineCharts.forEach((chart, index) => {
+                const chartData = chart.data;
+                chartData.labels = dataQueue.map(item => item.time).filter(time => time !== null);
+                chartData.datasets[0].data = dataQueue.map(item => item.value[index]).filter(value => value !== null);
+                chart.update();
+            });
+
+            };
+        });
 </script>
 </body>
 </html>

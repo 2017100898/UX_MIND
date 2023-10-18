@@ -120,16 +120,74 @@ card_css = """
 """
 
 
-cols = st.columns([1, 1])
+cols = st.columns([1.3, 0.7,  1])
 
 st.markdown(card_css, unsafe_allow_html=True)
 
 
-st.markdown('''
+with cols[0].container():
+    sub_cols_1 = st.columns([1, 1])
+
+    with sub_cols_1[0].container():
+        st.markdown('''
+                <div class="card">
+                    <div class="card-content">\t</div>
+                    <iframe src="http://localhost:5000/face_feed" width="100%" height="485" frameborder="0" scrolling="no">
+                    </iframe>
+                </div>''', unsafe_allow_html=True)
+        
+    with sub_cols_1[1].container():  
+        st.markdown('''
+                    
+                <div class="card">
+                    <div class = "card-title" >
+                    <div class="card-content">Emotion</div>
+                    </div>
+                        <iframe src="http://localhost:5000/emotion_feed" width="100%" height="450" frameborder="0" scrolling="no">
+                        </iframe>
+                </div>''', unsafe_allow_html=True)
+    
+    st.markdown('''
         <div class="card">
-            <div class = "card-title">
-            <div class="card-content">Attention</div>
+            <div class="card-title">
+                <div class="card-content">Transform into Character</div>
+                </select>
             </div>
-            <iframe src="http://localhost:5000/eeg_feed" width="100%" height="1000" frameborder="0" scrolling="no">
-                </iframe>
-        </div>''', unsafe_allow_html=True)
+            <iframe src="http://localhost:5000/diffusion_feed" width="100%" height="450" frameborder="0" scrolling="no">
+            </iframe>
+        </div>
+        ''', unsafe_allow_html=True)
+
+    
+
+with cols[1].container():
+        st.markdown('''
+                <div class="card">
+                        <div class = "card-title">
+                        <div class="card-content">EEG Stream</div>
+                        </div>
+                        <iframe src="http://localhost:5000/eeg_feed" width="100%" height="1000" frameborder="0" scrolling="no">
+                        </iframe>
+                </div>''', unsafe_allow_html=True)
+        
+
+with cols[2].container():
+     
+        st.markdown('''
+                <div class="card">
+                    <div class = "card-title">
+                    <div class="card-content">EEG Scalp Maps</div>
+                    </div>
+                        <iframe src="http://localhost:5000/mne_feed" width="100%" height="450" frameborder="0" scrolling="no">
+                        </iframe>
+                </div>''', unsafe_allow_html=True)
+    
+
+        st.markdown('''
+                <div class="card">
+                    <div class = "card-title">
+                    <div class="card-content">Attention</div>
+                    </div>
+                    <iframe src="http://localhost:5000/attention_feed" width="100%" height="450" frameborder="0" scrolling="no">
+                        </iframe>
+                </div>''', unsafe_allow_html=True)

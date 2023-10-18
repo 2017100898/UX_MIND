@@ -39,82 +39,56 @@ CORS(app)
 
 # 웹캠 비디오 캡처 객체 생성
 cap = cv2.VideoCapture(0)
-'''
-def load_eeg_data():
-    file_names = './datas/eeg_record3.mat'
-    mat = scipy.io.loadmat(file_names)
-    data = mat['o']['data'][0,0]
-    sfreq = mat['o']['sampFreq'][0][0][0][0]
-    channel_names = ['AF3', 'F7', 'F3', 'FC5', 'T7', 'P7', 'O1', 'O2', 'P8', 'T8', 'FC6', 'F4', 'F8', 'AF4']
-    info = create_info(channel_names, sfreq, ch_types=['eeg']*len(channel_names))
-    info.set_montage('standard_1020')
-    info['description'] = 'AIMS'
 
-    concatenated_data = data[5000:15000, 3:17].T
-    return info, concatenated_data
-'''
-def load_realtime_eeg_data():
-    streams = resolve_stream('type', 'EEG')
-    inlet = StreamInlet(streams[0])
-
-    sfreq = 128
-    channel_names = ['AF3', 'F7', 'F3', 'FC5', 'T7', 'P7', 'O1', 'O2', 'P8', 'T8', 'FC6', 'F4', 'F8', 'AF4']
-    info = create_info(channel_names, sfreq, ch_types=['eeg']*len(channel_names))
-    info.set_montage('standard_1020')
-    info['description'] = 'AIMS'
-
-    return info, inlet
-    
 ########################################🌟 MNE TOPOLOGY###################################
 
 # Generate MNE topomaps
 def generate_mne():
-    global info, samples, timestamps, global_sample
+    global concatenated_data, info
 
     plt.style.use("dark_background")
     fig = plt.figure(figsize=(7, 4), facecolor='none')
     ax = fig.add_subplot(111)
 
-    vmax = 4500
-    vmin = 4150
 
+    vmax = 20
+    vmin = -20
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
     colormapping = cm.ScalarMappable(norm=norm, cmap='jet') #, cmap=cmap
-    cb = fig.colorbar(colormapping, ax=plt.gca(), location='right', pad=0.04)
+
     buffer_size = 1
     eeg_buffer = np.zeros((14, buffer_size))
+
     time_step = 0
-
+    cb = fig.colorbar(colormapping, ax=plt.gca(), location='right', pad=0.04)
+    
     while True:
+        if time_step >= concatenated_data.shape[1]:
+            time_step = 0
+
+        ax.clear()
+
+        mne.viz.plot_topomap(
+            concatenated_data[:32, time_step],
+            info,
+            vlim=(vmin, vmax),
+            axes=ax,
+            show=False,
+            outlines='head',
+            cmap='jet',
+            sensors=False,
+            contours=0
+        )
+
+        canvas = FigureCanvas(fig)
+        buf = io.BytesIO()
+        canvas.print_png(buf)
+        buf.seek(0)
+
         time_step += 1
-        #samples, timestamps = inlet.pull_chunk(timeout=1.0, max_samples=buffer_size)
-        if timestamps:
-            samples = np.array(global_sample).T
-
-            eeg_buffer = np.roll(eeg_buffer, -len(timestamps), axis=1)
-            eeg_buffer[:, -len(timestamps):] = samples
-
-            epochs_data = eeg_buffer[:, :, np.newaxis].transpose((2, 0, 1))
-            epochs = np.mean(epochs_data, axis=2)
-
-            mne.viz.plot_topomap(
-                epochs[0],
-                info,
-                vlim=(vmin, vmax),
-                axes=ax,
-                show=False,
-                outlines='head',
-                cmap='jet',
-                sensors=False,
-                contours=0
-            )
-
-            canvas = FigureCanvas(fig)
-            buf = io.BytesIO()
-            canvas.print_png(buf)
-            buf.seek(0)
-            yield (b'--frame\r\n'
-                b'Content-Type: image/png\r\n\r\n' + buf.read() + b'\r\n')
+        
+        yield (b'--frame\r\n'
+            b'Content-Type: image/png\r\n\r\n' + buf.read() + b'\r\n')
 
 
 # Route to display MNE topomaps
@@ -132,50 +106,6 @@ def mne_feed():
     return render_template('mne_feed.html')
 
 ########################################🌟 EEG PLOT###################################
-'''
-def pull_data(concatenated_data, time_step):
-    sample = concatenated_data[:,time_step]
-    sample =sample*1e4
-
-    if time_step > concatenated_data.shape[1]:
-        time_step = 0
-    time_step += 1
-
-    return sample
-
-def generate_data():
-    global samples, timestamps, global_sample
-    time_step = 0
-
-    while True:
-        samples, timestamps = inlet.pull_chunk(timeout=1.0, max_samples=1)
-
-        if timestamps:
-            global_samples = [row[3:17] for row in samples]
-            sample = global_samples[0]
-            time_step += 1
-
-            json_data = json.dumps(
-                {'value': sample})
-
-            yield f"data:{json_data}\n\n"
-        
-            time.sleep(0.1)
-
-@app.route('/eeg_feed_model')
-def eeg_feed_model():
-    #_, concatenated_data = load_eeg_data()
-    response = Response(stream_with_context(generate_data()), mimetype="text/event-stream")
-    response.headers["Cache-Control"] = "no-cache"
-    response.headers["X-Accel-Buffering"] = "no"
-
-    return response
-
-@app.route('/eeg_feed')
-def eeg_feed():
-    return render_template('eeg_feed.html')
-'''
-
 def load_eeg_data():
     mat_file = "./datas/s01.mat"
     mat = scipy.io.loadmat(mat_file)
@@ -212,7 +142,8 @@ def pull_data(concatenated_data, time_step):
     return sample
 
 
-def generate_data(concatenated_data):
+def generate_data():
+    global concatenated_data
     time_step = 0
 
     while True:
@@ -221,16 +152,15 @@ def generate_data(concatenated_data):
         json_data = json.dumps({"time": time_step, "value": sample})
 
         yield f"data:{json_data}\n\n"
-        time.sleep(0.05)
+        time.sleep(0.03)
 
         if time_step > concatenated_data.shape[1]:
             time_step = 0
 
 @app.route("/eeg_feed_model")
 def eeg_feed_model():
-    _, concatenated_data = load_eeg_data()
     response = Response(
-        stream_with_context(generate_data(concatenated_data)),
+        stream_with_context(generate_data()),
         mimetype="text/event-stream",
     )
     
@@ -339,7 +269,7 @@ def extract_features(concatenated_eeg, time_window, time_points, window_blackman
     return knn_focus['data'].T,loaded_scaler, mod
 
 def get_attention():
-    global diff_focus, samples, timestamps, global_sample
+    global concatenated_data, focus
     time_step = 0
     time_points = TIME_WINDOW * SFREQ
     t_win = np.arange(0, 128)
@@ -348,30 +278,27 @@ def get_attention():
     window_blackman = 0.42 - 0.5 * np.cos((2 * np.pi * t_win) / (M - 1)) + 0.08 * np.cos((4 * np.pi * t_win) / (M - 1))
 
     while True:
-        #samples, timestamps = inlet.pull_chunk(timeout=1.0, max_samples=buffer_size)
-        #samples = concatenated_data[:, time_step:time_step + time_points]
+        if time_step > concatenated_data.shape[1]:
+            time_step = 0
 
-        if timestamps:
-            time_step += time_points
+        samples = concatenated_data[:, time_step:time_step + time_points]
+        time_step += time_points
 
-            samples = np.array(global_sample)
+        samples = np.array([row for row in samples]).T
+        realtime_data = samples[use_channel_inds, :]
 
-            realtime_data = samples[use_channel_inds, :]
+        realtime_data, loaded_scaler, mod = extract_features(realtime_data.T, TIME_WINDOW, time_points, window_blackman)
+        realtime_data_scaled = loaded_scaler.transform(realtime_data)
+        
+        value = mod.predict(realtime_data_scaled)[0]
+        focus = "focus" if value == 0 else ("unfocus" if value == 1 else ("drowsy" if value == 2 else "unknown"))
 
-            realtime_data, loaded_scaler, mod = extract_features(realtime_data.T, TIME_WINDOW, time_points, window_blackman)
-            realtime_data_scaled = loaded_scaler.transform(realtime_data)
-            
-            value = mod.predict(realtime_data_scaled)[0]
-            diff_focus = "focus" if value == 0 else ("unfocus" if value == 1 else ("drowsy" if value == 2 else "unknown"))
-
-            yield f"data: {value}\n\n"
-            
-            time.sleep(0.5)  # Pause for 0.5 seconds before the next update
+        yield f"data: {value}\n\n"
+        
+        time.sleep(0.5)  # Pause for 0.5 seconds before the next update
 
 @app.route('/attention_feed_model')
 def attention_feed_model():
-    #_, concatenated_data = load_eeg_data()
-    #_, inlet = load_realtime_eeg_data()
     response = Response(stream_with_context(get_attention()), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
@@ -514,10 +441,6 @@ def release_capture():
     cap.release()
 
 if __name__ == '__main__':
-    #info, inlet = load_realtime_eeg_data()
-    #samples, timestamps = inlet.pull_chunk(timeout=1.0, max_samples=1)
-    
-    #if timestamps:
-    #    global_sample = [row[3:17] for row in samples]
-        
+    info, concatenated_data = load_eeg_data()
+
     app.run(host='0.0.0.0', port='5000', debug=False)
