@@ -16,7 +16,8 @@ reduce_header_height_style = """
 st.markdown(reduce_header_height_style, unsafe_allow_html=True)
 
 
-st.markdown("""
+st.markdown(
+    """
     <style>
         .title-text {
             color: #ABE7E1;
@@ -30,7 +31,9 @@ st.markdown("""
             <span class="title-text">IN</span>teractive 
             <span class="title-text">D</span>ashboard
     </h1>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
 card_css = """
@@ -122,14 +125,27 @@ card_css = """
 
 cols = st.columns([1, 1])
 
-st.markdown(card_css, unsafe_allow_html=True)
+# 왼쪽 컬럼에 EEG Stream 추가
+cols[0].markdown(
+    """
+    <div class="card">
+        <div class = "card-title">
+            <div class="card-content">EEG Stream</div>
+        </div>
+        <iframe src="http://localhost:5000/eeg_feed" width="100%" height="1000" frameborder="0" scrolling="no">
+        </iframe>
+    </div>""",
+    unsafe_allow_html=True,
+)
 
-
-st.markdown('''
-        <div class="card">
-            <div class = "card-title">
-            <div class="card-content">Attention</div>
-            </div>
-            <iframe src="http://localhost:5000/eeg_feed" width="100%" height="1000" frameborder="0" scrolling="no">
-                </iframe>
-        </div>''', unsafe_allow_html=True)
+cols[1].markdown(
+    """
+    <div class="card">
+        <div class = "card-title">
+            <div class="card-content">MNE TOPOMAP</div>
+        </div>
+        <iframe src="http://localhost:5000/mne_feed" width="100%" height="700" frameborder="0" scrolling="no">
+        </iframe>
+    </div>""",
+    unsafe_allow_html=True,
+)
