@@ -21,7 +21,7 @@
         }
 
         .canvas-container {
-            width: 100%;
+            width: 80%;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -58,7 +58,6 @@
 <!--suppress JSUnresolvedLibraryURL -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js"></script>
 <script>
-
     $(document).ready(function () {
         const getMaxLegendLength = (names) => {
             return names.reduce((max, name) => Math.max(max, name.length), 0);
@@ -79,6 +78,15 @@
                     }],
                 },
                 options: {
+                    animation: {
+                        duration: 0,
+                        delay : 0,
+                        easing: 'linear'
+                    },
+                    interaction: {
+                    intersect: false
+                    },
+                    
                     responsive: true,
                     maintainAspectRatio: false,
                     hover: {
@@ -97,28 +105,28 @@
                             boxWidth: 0,
                         }
                     },
-
                     scales: {
                         xAxes: [{
-                            display: false, // X축 그리드 제거
+                            display: false,
                             ticks: {
-                                display: false //this will remove only the label
+                                display: false
                             },
                             gridLines: {
                                 display: false
                             }
                         }],
                         yAxes: [{
-                            display: false, // Y축 그리드 제거
+                            display: false,
                             ticks: {
-                                display: false //this will remove only the label
+                                //min:4000,
+                                //max:4300,
+                                display: false
                             },
                             gridLines: {
-                                display: false // Y축 그리드 제거
+                                display: false
                             }
                         }]
                     },
-
                     tooltips: {
                         enabled: false
                     }
@@ -127,10 +135,15 @@
         };
 
         const lineCharts = [];
-        const channelNames = ['AF3', 'F7 ', 'F3 ', 'FC5', 'T7 ', 'P7 ', 'O1 ', 'O2 ', 'P8 ', 'T8 ', 'FC6', 'F4 ', 'F8 ', 'AF4'];
+        const channelNames = ['AF3', 'F7', 'F3', 'FC5', 'T7', 'P7', 'O1', 'O2', 'P8', 'T8', 'FC6', 'F4', 'F8', 'AF4'];
         const colors = ['#FF00FF', '#FF9900', '#FFFF00', '#BAFF1A', '#00FF80', '#00FFFF', '#8000FF', '#FFCCFF', '#FFD700', '#C71585', '#8A2BE2', '#32CD32', '#00FA9A', '#1E90FF'];
-
         const maxLegendLength = getMaxLegendLength(channelNames);
+
+        const queueSize = 128; // 큐의 최대 크기
+        const dataQueue = new Array(queueSize).fill(null).map(() => ({
+            time: null,
+            value: Array(channelNames.length).fill(null)
+        }));
 
         for (let i = 0; i < channelNames.length; i++) {
             const canvasId = `canvas${i}`;
@@ -139,25 +152,27 @@
             lineCharts.push(lineChart);
         }
 
-        const source = new EventSource("/eeg_feed_model");
-
+        const source = new EventSource("/eeg_feed_model"); 
         source.onmessage = function (event) {
             const data = JSON.parse(event.data);
 
+            const newDataPoint = {
+                time: data.time,
+                value: data.value
+            };
+
+            dataQueue.shift();
+            dataQueue.push(newDataPoint);
+
             lineCharts.forEach((chart, index) => {
-
-                chart.data.labels.push(data.time);
-                chart.data.datasets[0].data.push(data.value[index]);
-
-                if (chart.data.labels.length >= 200) {
-                    chart.data.labels.shift();
-                    chart.data.datasets[0].data.shift();
-                }
-
+                const chartData = chart.data;
+                chartData.labels = dataQueue.map(item => item.time).filter(time => time !== null);
+                chartData.datasets[0].data = dataQueue.map(item => item.value[index]).filter(value => value !== null);
                 chart.update();
             });
-        };
-    });
+
+            };
+        });
 </script>
 </body>
 </html>
