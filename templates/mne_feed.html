@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <style>
-        body, html {
+        body,
+        html {
             height: 100%;
             width: 100%;
             margin: 0;
@@ -11,14 +13,14 @@
             justify-content: center;
             align-items: center;
         }
-        
+
         #image-container {
             width: 100%;
             display: flex;
             flex-direction: column;
-            align-items: center;      
+            align-items: center;
         }
-        
+
         #image {
             width: 100%;
             display: flex;
@@ -27,10 +29,41 @@
         }
     </style>
 </head>
+
 <body>
     <div id="image-container">
         <img id="image" src="{{ url_for('mne_feed_model') }}" alt="Streaming Image">
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+    <script>
+        const buffer = [];
+
+        const imageElement = document.getElementById('image');
+
+        const maxBufferSize = 80; // 버퍼의 최대 크기
+
+        // 이미지를 버퍼에 추가
+        function addToBuffer(image) {
+            if (buffer.length >= maxBufferSize) {
+                buffer.shift(); // 가장 오래된 이미지를 제거
+            }
+            buffer.push(image);
+        }
+
+        // 이미지 업데이트
+        function updateImage() {
+            if (buffer.length > 0) {
+                const nextImage = buffer.shift();
+                imageElement.src = nextImage;
+            }
+            requestAnimationFrame(updateImage);
+        }
+
+        // 페이지가 로드되면 이미지 업데이트 시작
+        window.onload = function () {
+            updateImage();
+        };
     </script>
 </body>
+
 </html>
