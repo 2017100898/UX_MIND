@@ -283,7 +283,7 @@ def get_attention():
 
             yield f"data: {value}\n\n"
             
-            time.sleep(0.5)  # Pause for 0.5 seconds before the next update
+            time.sleep(TIME_WINDOW) 
 
 @app.route('/attention_feed_model')
 def attention_feed_model():
@@ -341,6 +341,7 @@ def diffusion_feed_model():
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.enable_model_cpu_offload(gpu_id=0)
     pipe.enable_xformers_memory_efficient_attention()
+    pipe.set_progress_bar_config(disable=True)
 
     response = Response(generate_images(openpose, pipe), mimetype='multipart/x-mixed-replace; boundary=frame')
     response.headers["Cache-Control"] = "no-cache"
