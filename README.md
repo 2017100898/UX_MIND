@@ -1,4 +1,4 @@
-## AIMS XR DASHBOARD
+## MIND (Multimodal INteractive Dashboard)
 
 0. [드라이브](https://drive.google.com/drive/folders/1djwUiAWDnatcuyIDgYtblJyOTAx_YTBW?usp=sharing)에서 models 폴더를 다운로드 받아서 clone한 AIMS_XR 폴더에 넣어줍니다.
 1. requirements.txt 를 통해 패키지를 설치합니다.
