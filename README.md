@@ -1,10 +1,11 @@
 ## MIND (Multimodal INteractive Dashboard)
 
-0. [드라이브](https://drive.google.com/drive/folders/1djwUiAWDnatcuyIDgYtblJyOTAx_YTBW?usp=sharing)에서 models 폴더를 다운로드 받아서 clone한 AIMS_XR 폴더에 넣어줍니다.
-1. requirements.txt 를 통해 패키지를 설치합니다.
-    * 현재 패키지끼리의 버전 호환성 문제가 존재합니다.
-    * 따라서 txt의 모든 패키지를 다 설치하기보다는 import 된 패키지를 확인하여 설치하는 것을 권장합니다.
-2. cmd 창 이용해서 Flask 실행
-    * realtime eeg 사용 시 python app.py
-    * saved eeg 사용 시 python app_loaded.py
-3. 새로운 cmd 창을 열어 streamlit run dash.py
+0. Download the model folder from [Google Drive](https://drive.google.com/drive/folders/1djwUiAWDnatcuyIDgYtblJyOTAx_YTBW?usp=sharing) and place it in the cloned UX_MIND folder.
+1. Install the package through requirements.txt.
+    * A version compatibility issue exists between the current packages.
+    * * Therefore, it is recommended that you check and install the imported packages rather than installing all of the packages using txt file.
+2. Run Flask using the prompt window.
+    * When using real-time EEG (emotive lab stream layer): `python app.py`
+    * When using saved EEG data: `python app_loaded.py`
+3. Open a new prompt window and run `streamlit run dash.py`
+ 
